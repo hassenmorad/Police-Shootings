@@ -1,4 +1,4 @@
-import sys
+# Cleaning WAPO police shooting data and uploading to google sheets
 import pandas as pd
 import gspread as gspread
 from df2gspread import df2gspread as df2g
@@ -63,7 +63,8 @@ sheet_key = "1xn4Wori5gD8j5U51c1OUeiHaDuRqRIq0Php66hUh2d0"
 sheet_name = "Sheet1"
 df2g.upload(df, sheet_key, sheet_name, credentials=creds, row_names=False)
 
-"""# Editing column data format
+
+"""# Editing column data format (from text to number)
 spreadsheet = client.open("Police Shootings").sheet1
 
 requests = [{
