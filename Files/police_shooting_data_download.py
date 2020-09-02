@@ -1,8 +1,7 @@
 # Cleaning WAPO police shooting data and uploading to google sheets
 import pandas as pd
-import gspread as gspread
-from df2gspread import df2gspread as df2g
-from oauth2client.service_account import ServiceAccountCredentials
+import pygsheets as pyg
+from google.oauth2 import service_account
 
 # Downloading Data and Prepping for Upload
 df = pd.read_csv('https://raw.githubusercontent.com/washingtonpost/data-police-shootings/master/fatal-police-shootings-data.csv')
@@ -54,8 +53,24 @@ df.date = pd.to_datetime(df.date).dt.date  # removing timestamp
 # Replacing single anomaly in Gender col (missing gender)
 df.loc[(df.id == 2956) & (df.name == 'Scout Schultz'), 'gender'] = 'Male'
 
-# Uploading df to Google Sheets
+# Uploading df to Google Sheets (pygsheets)
+client = pyg.authorize(service_account_file='creds.json')
+url = 'https://docs.google.com/spreadsheets/d/1xn4Wori5gD8j5U51c1OUeiHaDuRqRIq0Php66hUh2d0/edit#gid=1344755995'
+sheet = client.open_by_url(url)
+wks = sheet.worksheet_by_title('Sheet1')
+wks.set_dataframe(df, start=(1,1))
+
+# Changing format of Month_Num col to Number ("0") so that it's treated as an integer by Google Data Studio
+mo_num_cell = pyg.Cell("S1")
+mo_num_cell.set_number_format(format_type = pyg.FormatType.NUMBER, pattern = "0")
+pyg.DataRange(start='S1', worksheet = wks).apply_format(mo_num_cell)
+
+"""# Uploading df to Google Sheets (df2g)
 # Resources: https://techwithtim.net/tutorials/google-sheets-python-api-tutorial/ & https://stackoverflow.com/questions/59117810/changing-column-format-in-google-sheets-by-gspread-and-google-sheets-api
+#import gspread as gspread
+#from df2gspread import df2gspread as df2g
+#from oauth2client.service_account import ServiceAccountCredentials
+
 scope = ["https://spreadsheets.google.com/feeds",'https://www.googleapis.com/auth/spreadsheets',"https://www.googleapis.com/auth/drive.file","https://www.googleapis.com/auth/drive"]
 creds = ServiceAccountCredentials.from_json_keyfile_name("creds.json", scope)
 client = gspread.authorize(creds)
@@ -63,8 +78,7 @@ sheet_key = "1xn4Wori5gD8j5U51c1OUeiHaDuRqRIq0Php66hUh2d0"
 sheet_name = "Sheet1"
 df2g.upload(df, sheet_key, sheet_name, credentials=creds, row_names=False)
 
-
-"""# Editing column data format (from text to number)
+# Editing column data format (from text to number)
 spreadsheet = client.open("Police Shootings").sheet1
 
 requests = [{
